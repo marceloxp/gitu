@@ -1,11 +1,11 @@
 {
   "name": "gitutilities",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Git Utilities GUI on Terminal",
   "repository": "git@github.com:marceloxp/gitutilities.git",
   "author": "Marcelo XP <marceloxp@gmail.com>",
   "license": "GPL-3.0",
   "scripts": {
-  	"gitu": "gitu.sh"
+    "gitu": "gitu.sh"
   }
 }
