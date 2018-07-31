@@ -6,6 +6,6 @@
 	"repository": "git@github.com:marceloxp/gitutilities.git",
 	"license": "GPL-3.0",
 	"bin": {
-		"gitu": "gitu"
+		"gitu": "bin/gitu"
 	}
 }
