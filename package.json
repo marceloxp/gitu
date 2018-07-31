@@ -1,6 +1,6 @@
 {
 	"name": "gitutilities",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"description": "Git Utilities GUI on Terminal",
 	"author": "Marcelo XP <marceloxp@gmail.com>",
 	"repository": "git@github.com:marceloxp/gitutilities.git",
