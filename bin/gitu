@@ -311,7 +311,7 @@ menu_git_tag_add()
 		git tag $tag_name
 
 		if utils_has_remote; then
-			git push origin :$tag_name
+			git push --tags
 		fi
 	end_script "GIT ADD TAG"
 
@@ -340,7 +340,7 @@ menu_git_tag_del()
 		git tag -d $tag_name
 		if utils_has_remote; then
 			git push --delete origin $tag_name
-			git push origin :$tag_name
+			git push --tags
 		fi
 
 	end_script "GIT DEL TAG"
