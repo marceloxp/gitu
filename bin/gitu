@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Install npm package (terminal): npm install -g figlet-cli
-# chmod a+x gitu
-
 BOOL_SUCCESS=0
 BOOL_FAIL=1
 
