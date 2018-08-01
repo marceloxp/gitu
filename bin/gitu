@@ -429,80 +429,94 @@ menu_branches()
 	echo "0 - Update remote branches           4 - Create local branch"
 	echo "1 - List local branches              5 - Switch to another branch"
 	echo "2 - List remote branches             6 - Delete branch"
-	echo "3 - List local and remote branches"
+	echo "3 - List local and remote branches   7 - ^ Push local branch"
 	draw_line
 	echo "ENTER -> Back"
 	draw_line
 	echo ""
 	read -p "Choose a BRANCH command: " opcao;
 		case $opcao in
-		 "0")
-			clear
-			begin_script "LIST REMOTE BRANCHES"
-			git branch -r
-			end_script "LIST REMOTE BRANCHES"
+			 "0") menu_branches_update_remote ;;
+			 "1") menu_branches_list_local_branches ;;
+			 "2") menu_branches_list_remote_branches ;;
+			 "3") menu_branches_list_local_and_remote_branches ;;
+			 "4") menu_branches_create_local ;;
+			 "5") menu_branches_switch_to_another_branch ;;
+			 "6") menu_branches_delete ;;
+			 "7") menu_branches_push ;;
+			 "" ) menu_main ;;
+		esac
+}
 
-			begin_script "UPDATE REMOTE BRANCHES"
-			git remote update origin --prune
-			end_script "UPDATE REMOTE BRANCHES"
+menu_branches_update_remote()
+{
+	clear
+	begin_script "LIST REMOTE BRANCHES"
+	git branch -r
+	end_script "LIST REMOTE BRANCHES"
 
-			begin_script "LIST REMOTE BRANCHES"
-			git branch -r
-			end_script "LIST REMOTE BRANCHES"
+	begin_script "UPDATE REMOTE BRANCHES"
+	git remote update origin --prune
+	end_script "UPDATE REMOTE BRANCHES"
 
-			wait_key
-			menu_branches
-			;;
-		 "1")
-			clear
-			begin_script "LIST LOCAL BRANCHES"
-			git branch
-			end_script "LIST LOCAL BRANCHES"
-			wait_key
-			menu_branches
-			;;
-		 "2")
-			clear
-			begin_script "LIST REMOTE BRANCHES"
-			git branch -r
-			end_script "LIST REMOTE BRANCHES"
-			wait_key
-			menu_branches
-			;;
-		 "3")
-			clear
-			begin_script "LIST LOCAL AND REMOTE BRANCHES"
-			git branch -a
-			end_script "LIST LOCAL AND REMOTE BRANCHES"
-			wait_key
-			menu_branches
-			;;
-		 "4") menu_branches_create_local ;;
-		 "5")
-			clear
-			begin_script "SWITCH TO ANOTHER BRANCH"
-			
-				git branch -a
-				draw_line
+	begin_script "LIST REMOTE BRANCHES"
+	git branch -r
+	end_script "LIST REMOTE BRANCHES"
 
-				read -p "Branch name [cancel]: " branch_name
-				if [[ $branch_name != "" ]]
-				then
-					git checkout $branch_name
-				else
-					echo "No action!"
-				fi
+	wait_key
+	menu_branches
+}
 
-			end_script "SWITCH TO ANOTHER BRANCH"
+menu_branches_list_local_branches()
+{
+	clear
+	begin_script "LIST LOCAL BRANCHES"
+	git branch
+	end_script "LIST LOCAL BRANCHES"
+	wait_key
+	menu_branches
+}
 
-			wait_key
-			menu_branches
-			;;
-		 "6") menu_branches_delete ;;
-		 "")
-			menu_main
-		 ;;
-	esac
+menu_branches_list_remote_branches()
+{
+	clear
+	begin_script "LIST REMOTE BRANCHES"
+	git branch -r
+	end_script "LIST REMOTE BRANCHES"
+	wait_key
+	menu_branches
+}
+
+menu_branches_list_local_and_remote_branches()
+{
+	clear
+	begin_script "LIST LOCAL AND REMOTE BRANCHES"
+	git branch -a
+	end_script "LIST LOCAL AND REMOTE BRANCHES"
+	wait_key
+	menu_branches
+}
+
+menu_branches_switch_to_another_branch()
+{
+	clear
+	begin_script "SWITCH TO ANOTHER BRANCH"
+	
+		git branch -a
+		draw_line
+
+		read -p "Branch name [cancel]: " branch_name
+		if [[ $branch_name != "" ]]
+		then
+			git checkout $branch_name
+		else
+			echo "No action!"
+		fi
+
+	end_script "SWITCH TO ANOTHER BRANCH"
+
+	wait_key
+	menu_branches
 }
 
 menu_branches_create_local()
@@ -576,6 +590,38 @@ menu_branches_delete()
 	elif [[ $local_remote == "remote" || $local_remote == "REMOTE" ]]
 	then
 		echo "remote"
+	fi
+
+	wait_key
+	menu_branches
+}
+
+menu_branches_push()
+{
+	draw_header "BRANCHES UTILITIES" "Push local branch to orign"
+
+	begin_script "LIST LOCAL AND REMOTE BRANCHES"
+	git branch -a
+	end_script "LIST LOCAL AND REMOTE BRANCHES"
+
+	read -p "Branch name [cancel] to exit: " branch_name
+	if [[ $branch_name == "cancel" || $branch_name == "CANCEL" || $branch_name == "" ]]
+	then
+		wait_key
+		menu_branches
+		return
+	fi
+
+	read -p "Push local branch '$branch_name' to orign [yes]? " yes_no
+	if [[ $yes_no == "yes" || $yes_no == "YES" || $yes_no == "" ]]
+	then
+		begin_script "PUSH LOCAL BRANCH"
+		git push -u origin $branch_name
+		end_script "PUSH LOCAL BRANCH"
+
+		begin_script "LIST LOCAL AND REMOTE BRANCHES"
+		git branch -a
+		end_script "LIST LOCAL AND REMOTE BRANCHES"
 	fi
 
 	wait_key
