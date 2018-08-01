@@ -17,8 +17,8 @@ menu_main()
 	echo "3 - Unstage commited files      8 - ^ Push files to   orign ("$current_branch")"
 	echo "4 - Discard changes             9 - Tags"
 	draw_line
-	echo "BU - Branches utilities         ENTER - Exit"
-	echo "ZP - Generate Zip"
+	echo "B - Branches utilities          Y - Yarn"
+	echo "Z - Generate Zip                ENTER - Exit"
 	draw_line
 	read -p "Choose a GIT command: " opcao;
 	case $opcao in
@@ -32,8 +32,9 @@ menu_main()
 		"7") menu_pull_files ;;
 		"8") menu_push_files ;;
 		"9") menu_git_tag ;;
-		"ZP"|"zp") menu_zip_files ;;
-		"BU"|"bu") menu_branches ;;
+		"Z"|"z") menu_zip_files ;;
+		"B"|"b") menu_branches ;;
+		"Y"|"y") menu_yarn ;;
 	esac
 }
 
@@ -189,9 +190,9 @@ menu_undo_last_commit()
 	begin_script "LAST COMMIT"
 	git log -1
 	end_script "LAST COMMIT"
-	read -e -p "Undo last commit [empty to last/first/none]: " last_commit_type
+	read -e -p "Undo last commit [last/first/empty to cancel]: " last_commit_type
 
-	if [ "$last_commit_type" == "" ]
+	if [ "$last_commit_type" == "last" ]
 	then
 		begin_script "GIT UNDO LAST COMMIT"
 		git_status
@@ -292,7 +293,7 @@ menu_git_tag()
 menu_git_tag_add()
 {
 	clear
-	git tag --list
+	git tag -l -n
 	read -e -p "Tag name [cancel]: " tag_name
 	if [ "$tag_name" == "" ]
 	then
@@ -325,7 +326,7 @@ menu_git_tag_del()
 	draw_line
 	echo "List Tags:"
 	draw_line
-	git tag --list
+	git tag -l -n
 	draw_line
 	read -e -p "Tag name [cancel]: " tag_name
 	if [ "$tag_name" == "" ]
@@ -348,7 +349,7 @@ menu_git_tag_del()
 	draw_line
 	echo "List Tags:"
 	draw_line
-	git tag --list
+	git tag -l -n
 	draw_line
 
 	wait_key
@@ -361,7 +362,7 @@ menu_git_tag_lst()
 	draw_line
 	echo "List Tags:"
 	draw_line
-	git tag --list
+	git tag -l -n
 	draw_line
 
 	wait_key
@@ -371,6 +372,42 @@ menu_git_tag_lst()
 menu_git_tag_back()
 {
 	menu_main
+}
+
+# ██╗   ██╗ █████╗ ██████╗ ███╗   ██╗
+# ╚██╗ ██╔╝██╔══██╗██╔══██╗████╗  ██║
+#  ╚████╔╝ ███████║██████╔╝██╔██╗ ██║
+#   ╚██╔╝  ██╔══██║██╔══██╗██║╚██╗██║
+#    ██║   ██║  ██║██║  ██║██║ ╚████║
+#    ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝
+
+menu_yarn()
+{
+	clear
+	draw_line
+	draw_logo
+	print_project_and_git_info
+	current_branch=`utils_get_current_branch`
+
+	echo "1 - Publish"
+	draw_line
+	echo "ENTER - Back"
+	draw_line
+	read -p "Choose a YARN command: " opcao;
+	case $opcao in
+		"1") menu_yarn_publish ;;
+		 "")
+			menu_main
+		 ;;
+	esac
+}
+
+menu_yarn_publish()
+{
+	yarn publish
+	if utils_has_remote; then
+		git push --tags
+	fi
 }
 
 # ██████╗ ██████╗  █████╗ ███╗   ██╗ ██████╗██╗  ██╗███████╗███████╗
@@ -386,16 +423,36 @@ menu_branches()
 	draw_line
 	draw_logo
 	print_project_and_git_info
-
-	echo "1 - List local branchs"
-	echo "2 - List remote branchs"
-	echo "3 - List local and remote branchs"
+	echo "BRANCHES UTILITIES"
 	draw_line
-	echo "ENTER - Back"
+
+	echo "0 - Update remote branches           4 - Create local branch"
+	echo "1 - List local branches              5 - Switch to another branch"
+	echo "2 - List remote branches             6 - Delete branch"
+	echo "3 - List local and remote branches"
+	draw_line
+	echo "ENTER -> Back"
 	draw_line
 	echo ""
 	read -p "Choose a BRANCH command: " opcao;
 		case $opcao in
+		 "0")
+			clear
+			begin_script "LIST REMOTE BRANCHES"
+			git branch -r
+			end_script "LIST REMOTE BRANCHES"
+
+			begin_script "UPDATE REMOTE BRANCHES"
+			git remote update origin --prune
+			end_script "UPDATE REMOTE BRANCHES"
+
+			begin_script "LIST REMOTE BRANCHES"
+			git branch -r
+			end_script "LIST REMOTE BRANCHES"
+
+			wait_key
+			menu_branches
+			;;
 		 "1")
 			clear
 			begin_script "LIST LOCAL BRANCHES"
@@ -420,10 +477,109 @@ menu_branches()
 			wait_key
 			menu_branches
 			;;
+		 "4") menu_branches_create_local ;;
+		 "5")
+			clear
+			begin_script "SWITCH TO ANOTHER BRANCH"
+			
+				git branch -a
+				draw_line
+
+				read -p "Branch name [cancel]: " branch_name
+				if [[ $branch_name != "" ]]
+				then
+					git checkout $branch_name
+				else
+					echo "No action!"
+				fi
+
+			end_script "SWITCH TO ANOTHER BRANCH"
+
+			wait_key
+			menu_branches
+			;;
+		 "6") menu_branches_delete ;;
 		 "")
 			menu_main
 		 ;;
 	esac
+}
+
+menu_branches_create_local()
+{
+	draw_header "BRANCHES UTILITIES" "Create local branch"
+
+	begin_script "LIST LOCAL AND REMOTE BRANCHES"
+	git branch -a
+	end_script "LIST LOCAL AND REMOTE BRANCHES"
+	
+	read -p "Branch name [cancel] to exit: " branch_name
+	if [[ $branch_name == "cancel" || $branch_name == "CANCEL" ]]
+	then
+		wait_key
+		menu_branches
+		return
+	elif [[ $branch_name != "" ]]
+	then
+		read -p "Create branch '$branch_name' [yes]? " yes_no
+		if [[ $yes_no == "yes" || $yes_no == "YES"  || $yes_no == "" ]]
+		then
+			git checkout -b $branch_name
+		fi
+	fi
+
+	wait_key
+	menu_branches
+}
+
+menu_branches_delete()
+{
+	draw_header "BRANCHES UTILITIES" "Delete branch"
+
+	read -p "[l]ocal or [r]emote branch [cancel]? " local_remote
+	if [[ $local_remote == "" ]]
+	then
+		wait_key
+		menu_branches
+		return
+	fi
+
+	if [[ $local_remote == "l" || $local_remote == "L" ]]
+	then
+		begin_script "LIST LOCAL AND REMOTE BRANCHES"
+		git branch -a
+		end_script "LIST LOCAL AND REMOTE BRANCHES"
+
+		read -p "Branch name [cancel] to exit: " branch_name
+		if [[ $branch_name == "cancel" || $branch_name == "CANCEL" || $branch_name == "" ]]
+		then
+			wait_key
+			menu_branches
+			return
+		fi
+
+		read -p "Delete local branch '$branch_name' [yes]? " yes_no
+		if [[ $yes_no == "yes" || $yes_no == "YES" || $yes_no == "" ]]
+		then
+			begin_script "DELETE LOCAL BRANCH"
+			git branch -d $branch_name
+			end_script "DELETE LOCAL BRANCH"
+
+			begin_script "LIST LOCAL AND REMOTE BRANCHES"
+			git branch -a
+			end_script "LIST LOCAL AND REMOTE BRANCHES"
+		fi
+
+		wait_key
+		menu_branches
+		return
+	elif [[ $local_remote == "remote" || $local_remote == "REMOTE" ]]
+	then
+		echo "remote"
+	fi
+
+	wait_key
+	menu_branches
 }
 
 #  ██████╗ ██╗   ██╗██╗
@@ -435,7 +591,8 @@ menu_branches()
 
 wait_key()
 {
-	read -p "Press any key to continue... " -n1 -s
+	echo ""
+	read -p "> PRESS ANY KEY TO CONTINUE... " -n1 -s
 	echo ""
 	echo ""
 }
@@ -469,6 +626,24 @@ end_script()
 	draw_line
 	echo "END" $1
 	draw_line
+}
+
+draw_header()
+{
+	clear
+	draw_line
+	draw_logo
+	print_project_and_git_info
+
+	if [[ $1 != "" && $2 != "" ]]
+	then
+		echo $1 " > " $2
+		draw_line
+	elif [[ $1 != "" ]]
+	then
+		echo $1
+		draw_line
+	fi
 }
 
 # ███████╗██╗   ██╗███╗   ██╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗

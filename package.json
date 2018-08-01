@@ -8,7 +8,7 @@
 	"bin": {
 		"gitu": "bin/gitu"
 	},
-	"devDependencies": {
-		"figlet-cli": "^0.1.0"
+	"scripts": {
+		"preinstall": "npm i -g figlet-cli"
 	}
 }
