@@ -14,11 +14,11 @@ menu_main()
 	echo "0 - Git diff GUI                5 - Commit files"
 	echo "1 - Get git status              6 - Undo commit"
 	echo "2 - Stage all pending files     7 - V Pull files from orign ("$current_branch")"
-	echo "3 - Unstage commited files      8 - ^ Push files to   orign ("$current_branch")"
+	echo "3 - Unstage indexed files       8 - ^ Push files to   orign ("$current_branch")"
 	echo "4 - Discard changes             9 - Tags"
 	draw_line
 	echo "B - Branches utilities          Y - Yarn"
-	echo "Z - Generate Zip                ENTER - Exit"
+	echo "Z - Generate Zip                S - Stash                 ENTER - Exit"
 	draw_line
 	read -p "Choose a GIT command: " opcao;
 	case $opcao in
@@ -35,6 +35,7 @@ menu_main()
 		"Z"|"z") menu_zip_files ;;
 		"B"|"b") menu_branches ;;
 		"Y"|"y") menu_yarn ;;
+		"S"|"s") menu_stash ;;
 	esac
 }
 
@@ -56,11 +57,12 @@ print_project_and_git_info()
 
 git_status()
 {
-	begin_script "GIT STATUS"
-	git status
-	end_script "GIT STATUS"
+	draw_header "GIT STATUS" $1
+	git status -s
+	draw_line
 }
 
+# menu 0
 menu_git_k()
 {
 	clear
@@ -68,16 +70,16 @@ menu_git_k()
 	menu_main
 }
 
+# menu 1
 menu_git_status()
 {
 	clear
-	begin_script "GIT STATUS"
-	git status
-	end_script "GIT STATUS"
+	git_status
 	wait_key
 	menu_main
 }
 
+# menu 2
 menu_git_add_all()
 {
 	clear
@@ -89,6 +91,42 @@ menu_git_add_all()
 	menu_main
 }
 
+# menu 3
+menu_unstage_files()
+{
+	clear
+	git_status "UNSTAGE FILES"
+	read -e -p "File to unstage [empty to all/cancel]: " file_name
+	if [ "$file_name" == "" ]
+	then
+		begin_script "GIT UNSTAGE ALL"
+		git reset HEAD -- .
+		end_script "GIT UNSTAGE ALL"
+		git_status
+		wait_key
+		menu_main
+		return
+	elif [ "$file_name" == "cancel" ]
+	then
+		menu_main
+		return
+	else
+		if [ "$file_name" == "" ]
+		then
+			menu_main
+			return
+		else
+			begin_script "GIT UNSTAGE FILE"
+			git checkout $file_name
+			end_script "GIT UNSTAGE FILE"
+			git_status
+		fi
+	fi
+	wait_key
+	menu_main
+}
+
+# menu 4
 menu_discard_changes()
 {
 	git_status
@@ -118,15 +156,32 @@ menu_discard_changes()
 	menu_main
 }
 
+# menu 5
 menu_commit_files()
 {
 	clear
+
+	draw_header "GIT STATUS" $1
+	git status -s
+	draw_line
+
 	commit_message=""
 	get_line="endline"
 
+	echo "[gitk|esc]"
+	echo ""
+
 	until [[ $get_line = "" ]];do
 		read -p "Commit message [done]: " get_line
-		if [[ $get_line == "" ]]
+		if [[ $get_line == "gitk" ]]
+		then
+			gitk &
+		elif [[ $get_line == "esc" ]]
+		then
+			wait_key
+			menu_main
+			return
+		elif [[ $get_line == "" ]]
 		then
 			echo $commit_message
 			git commit -m"$(echo -e "$commit_message")"
@@ -145,51 +200,14 @@ menu_commit_files()
 	exit 0
 }
 
-menu_unstage_files()
-{
-	clear
-	git_status
-	read -e -p "File to unstage [empty to all/cancel]: " file_name
-	if [ "$file_name" == "" ]
-	then
-		begin_script "GIT UNSTAGE ALL"
-		git reset HEAD -- .
-		end_script "GIT UNSTAGE ALL"
-		git status
-		wait_key
-		menu_main
-		return
-	elif [ "$file_name" == "cancel" ]
-	then
-		menu_main
-		return
-	else
-		if [ "$file_name" == "" ]
-		then
-			menu_main
-			return
-		else
-			if [ -e $file_name ]
-			then
-				begin_script "GIT UNSTAGE FILE"
-				git reset HEAD $file_name
-				end_script "GIT UNSTAGE FILE"
-				git_status
-			else
-				echo "File not found!"
-			fi
-		fi
-	fi
-	wait_key
-	menu_main
-}
-
+# menu 6
 menu_undo_last_commit()
 {
 	clear
-	begin_script "LAST COMMIT"
+	draw_header "UNDO LAST COMMIT" "LAST COMMIT"
 	git log -1
-	end_script "LAST COMMIT"
+	draw_line
+
 	read -e -p "Undo last commit [last/first/empty to cancel]: " last_commit_type
 
 	if [ "$last_commit_type" == "last" ]
@@ -212,6 +230,7 @@ menu_undo_last_commit()
 	fi
 }
 
+# menu 7
 menu_pull_files()
 {
 	current_branch=`utils_get_current_branch`
@@ -226,6 +245,7 @@ menu_pull_files()
 	menu_main
 }
 
+# menu 8
 menu_push_files()
 {
 	current_branch=`utils_get_current_branch`
@@ -240,6 +260,7 @@ menu_push_files()
 	menu_main
 }
 
+# menu z
 menu_zip_files()
 {
 	git log --oneline --decorate --color --graph
@@ -265,6 +286,7 @@ menu_zip_files()
 # ╚██████╔╝██║   ██║          ██║   ██║  ██║╚██████╔╝
 #  ╚═════╝ ╚═╝   ╚═╝          ╚═╝   ╚═╝  ╚═╝ ╚═════╝ 
 
+# menu 9
 menu_git_tag()
 {
 	clear
@@ -293,7 +315,9 @@ menu_git_tag()
 menu_git_tag_add()
 {
 	clear
+	draw_header "GIT TAG" "ADD"
 	git tag -l -n
+	draw_line
 	read -e -p "Tag name [cancel]: " tag_name
 	if [ "$tag_name" == "" ]
 	then
@@ -323,9 +347,7 @@ menu_git_tag_add()
 menu_git_tag_del()
 {
 	clear
-	draw_line
-	echo "List Tags:"
-	draw_line
+	draw_header "GIT TAG" "REMOVE"
 	git tag -l -n
 	draw_line
 	read -e -p "Tag name [cancel]: " tag_name
@@ -359,9 +381,7 @@ menu_git_tag_del()
 menu_git_tag_lst()
 {
 	clear
-	draw_line
-	echo "List Tags:"
-	draw_line
+	draw_header "GIT TAG" "LIST"
 	git tag -l -n
 	draw_line
 
@@ -451,18 +471,8 @@ menu_branches()
 menu_branches_update_remote()
 {
 	clear
-	begin_script "LIST REMOTE BRANCHES"
-	git branch -r
-	end_script "LIST REMOTE BRANCHES"
-
-	begin_script "UPDATE REMOTE BRANCHES"
+	draw_header "BRANCHES UTILITIES" "UPDATE REMOTE BRANCHES"
 	git remote update origin --prune
-	end_script "UPDATE REMOTE BRANCHES"
-
-	begin_script "LIST REMOTE BRANCHES"
-	git branch -r
-	end_script "LIST REMOTE BRANCHES"
-
 	wait_key
 	menu_branches
 }
@@ -470,9 +480,8 @@ menu_branches_update_remote()
 menu_branches_list_local_branches()
 {
 	clear
-	begin_script "LIST LOCAL BRANCHES"
+	draw_header "BRANCHES UTILITIES" "LIST LOCAL BRANCHES"
 	git branch
-	end_script "LIST LOCAL BRANCHES"
 	wait_key
 	menu_branches
 }
@@ -480,9 +489,8 @@ menu_branches_list_local_branches()
 menu_branches_list_remote_branches()
 {
 	clear
-	begin_script "LIST REMOTE BRANCHES"
+	draw_header "BRANCHES UTILITIES" "LIST REMOTE BRANCHES"
 	git branch -r
-	end_script "LIST REMOTE BRANCHES"
 	wait_key
 	menu_branches
 }
@@ -490,9 +498,8 @@ menu_branches_list_remote_branches()
 menu_branches_list_local_and_remote_branches()
 {
 	clear
-	begin_script "LIST LOCAL AND REMOTE BRANCHES"
+	draw_header "BRANCHES UTILITIES" "LIST LOCAL AND REMOTE BRANCHES"
 	git branch -a
-	end_script "LIST LOCAL AND REMOTE BRANCHES"
 	wait_key
 	menu_branches
 }
@@ -500,20 +507,18 @@ menu_branches_list_local_and_remote_branches()
 menu_branches_switch_to_another_branch()
 {
 	clear
-	begin_script "SWITCH TO ANOTHER BRANCH"
+	draw_header "BRANCHES UTILITIES" "SWITCH TO ANOTHER BRANCH"
 	
-		git branch -a
-		draw_line
+	git branch -a
+	draw_line
 
-		read -p "Branch name [cancel]: " branch_name
-		if [[ $branch_name != "" ]]
-		then
-			git checkout $branch_name
-		else
-			echo "No action!"
-		fi
-
-	end_script "SWITCH TO ANOTHER BRANCH"
+	read -p "Branch name [cancel]: " branch_name
+	if [[ $branch_name != "" ]]
+	then
+		git checkout $branch_name
+	else
+		echo "No action!"
+	fi
 
 	wait_key
 	menu_branches
@@ -522,12 +527,11 @@ menu_branches_switch_to_another_branch()
 menu_branches_create_local()
 {
 	draw_header "BRANCHES UTILITIES" "Create local branch"
-
-	begin_script "LIST LOCAL AND REMOTE BRANCHES"
 	git branch -a
-	end_script "LIST LOCAL AND REMOTE BRANCHES"
+	draw_line
 	
 	read -p "Branch name [cancel] to exit: " branch_name
+	draw_line
 	if [[ $branch_name == "cancel" || $branch_name == "CANCEL" ]]
 	then
 		wait_key
@@ -536,6 +540,7 @@ menu_branches_create_local()
 	elif [[ $branch_name != "" ]]
 	then
 		read -p "Create branch '$branch_name' [yes]? " yes_no
+		draw_line
 		if [[ $yes_no == "yes" || $yes_no == "YES"  || $yes_no == "" ]]
 		then
 			git checkout -b $branch_name
@@ -548,7 +553,8 @@ menu_branches_create_local()
 
 menu_branches_delete()
 {
-	draw_header "BRANCHES UTILITIES" "Delete branch"
+	clear
+	draw_header "BRANCHES UTILITIES" "DELETE BRANCH"
 
 	read -p "[l]ocal or [r]emote branch [cancel]? " local_remote
 	if [[ $local_remote == "" ]]
@@ -560,11 +566,13 @@ menu_branches_delete()
 
 	if [[ $local_remote == "l" || $local_remote == "L" ]]
 	then
-		begin_script "LIST LOCAL AND REMOTE BRANCHES"
+		clear
+		draw_header "BRANCHES UTILITIES" "DELETE LOCAL BRANCH"
 		git branch -a
-		end_script "LIST LOCAL AND REMOTE BRANCHES"
+		draw_line
 
 		read -p "Branch name [cancel] to exit: " branch_name
+		draw_line
 		if [[ $branch_name == "cancel" || $branch_name == "CANCEL" || $branch_name == "" ]]
 		then
 			wait_key
@@ -573,15 +581,10 @@ menu_branches_delete()
 		fi
 
 		read -p "Delete local branch '$branch_name' [yes]? " yes_no
+		draw_line
 		if [[ $yes_no == "yes" || $yes_no == "YES" || $yes_no == "" ]]
 		then
-			begin_script "DELETE LOCAL BRANCH"
 			git branch -d $branch_name
-			end_script "DELETE LOCAL BRANCH"
-
-			begin_script "LIST LOCAL AND REMOTE BRANCHES"
-			git branch -a
-			end_script "LIST LOCAL AND REMOTE BRANCHES"
 		fi
 
 		wait_key
@@ -599,12 +602,10 @@ menu_branches_delete()
 menu_branches_push()
 {
 	draw_header "BRANCHES UTILITIES" "Push local branch to orign"
-
-	begin_script "LIST LOCAL AND REMOTE BRANCHES"
 	git branch -a
-	end_script "LIST LOCAL AND REMOTE BRANCHES"
 
 	read -p "Branch name [cancel] to exit: " branch_name
+	draw_line
 	if [[ $branch_name == "cancel" || $branch_name == "CANCEL" || $branch_name == "" ]]
 	then
 		wait_key
@@ -613,19 +614,80 @@ menu_branches_push()
 	fi
 
 	read -p "Push local branch '$branch_name' to orign [yes]? " yes_no
+	draw_line
 	if [[ $yes_no == "yes" || $yes_no == "YES" || $yes_no == "" ]]
 	then
-		begin_script "PUSH LOCAL BRANCH"
 		git push -u origin $branch_name
-		end_script "PUSH LOCAL BRANCH"
-
-		begin_script "LIST LOCAL AND REMOTE BRANCHES"
-		git branch -a
-		end_script "LIST LOCAL AND REMOTE BRANCHES"
 	fi
 
 	wait_key
 	menu_branches
+}
+
+# ███████╗████████╗ █████╗ ███████╗██╗  ██╗
+# ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║  ██║
+# ███████╗   ██║   ███████║███████╗███████║
+# ╚════██║   ██║   ██╔══██║╚════██║██╔══██║
+# ███████║   ██║   ██║  ██║███████║██║  ██║
+# ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+
+menu_stash()
+{
+	clear
+	draw_line
+	draw_logo
+	print_project_and_git_info
+	echo "STASH UTILITIES"
+	draw_line
+
+	echo "0 - List stashes"
+	echo "1 - Add files to Stash"
+	echo "2 - Pop files from Stash"
+	draw_line
+	echo "ENTER -> Back"
+	draw_line
+	echo ""
+	read -p "Choose a STASH command: " opcao;
+		case $opcao in
+			 "0") menu_stash_LIST ;;
+			 "1") menu_stash_add ;;
+			 "2") menu_stash_pop ;;
+			 "" ) menu_main ;;
+		esac
+}
+
+menu_stash_LIST()
+{
+	draw_header "STASH UTILITIES" "LIST STASHES"
+	git stash list
+	wait_key
+	menu_stash
+}
+
+menu_stash_add()
+{
+	draw_header "STASH UTILITIES" "ADD FILES TO STASH"
+
+	begin_script "LIST STASHES"
+	git stash list
+	end_script "LIST STASHES"
+
+	read -p "Stash name: " name;
+	if [[ $name != "" ]]
+	then
+		git stash save $name
+	else
+		wait_key
+		menu_stash
+		return
+	fi
+
+	begin_script "LIST STASHES"
+	git stash list
+	end_script "LIST STASHES"
+
+	wait_key
+	menu_stash
 }
 
 #  ██████╗ ██╗   ██╗██╗
