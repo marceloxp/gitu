@@ -13,8 +13,8 @@ menu_main()
 
 	echo "0 - Git diff GUI                5 - Commit files"
 	echo "1 - Get git status              6 - Undo commit"
-	echo "2 - Stage all pending files     7 - V Pull files from orign ("$current_branch")"
-	echo "3 - Unstage indexed files       8 - ^ Push files to   orign ("$current_branch")"
+	echo "2 - Stage all pending files     7 - V Pull files from orign"
+	echo "3 - Unstage indexed files       8 - ^ Push files to orign ("$current_branch")"
 	echo "4 - Discard changes             9 - Tags"
 	draw_line
 	echo "B - Branches utilities          Y - Yarn"
@@ -236,14 +236,25 @@ menu_pull_files()
 	current_branch=`utils_get_current_branch`
 
 	clear
-	draw_header "V PULL FILES FROM ORIGN" "$current_branch"
+	draw_header "V PULL FILES FROM ORIGN"
 
-	if [ "$current_branch" != "" ]
+	read -e -p "Branch name [$current_branch|cancel]: " branch_name
+	draw_line
+
+	if [[ "$branch_name" == "cancel" || "$branch_name" == "CANCEL" ]]
 	then
-		git pull origin $current_branch
-	else
-		echo -n "Current branch not found!"
+		wait_key
+		menu_main
+		return
 	fi
+
+	if [ "$branch_name" == "" ]
+	then
+		branch_name=$current_branch
+	fi
+
+	git pull origin $branch_name
+
 	wait_key
 	menu_main
 }
@@ -596,9 +607,32 @@ menu_branches_delete()
 		wait_key
 		menu_branches
 		return
-	elif [[ $local_remote == "remote" || $local_remote == "REMOTE" ]]
+	elif [[ $local_remote == "r" || $local_remote == "R" ]]
 	then
-		echo "remote"
+		clear
+		draw_header "BRANCHES UTILITIES" "DELETE REMOTE BRANCH"
+		git branch -r
+		draw_line
+
+		read -p "Branch name [cancel] to exit: " branch_name
+		draw_line
+		if [[ $branch_name == "cancel" || $branch_name == "CANCEL" || $branch_name == "" ]]
+		then
+			wait_key
+			menu_branches
+			return
+		fi
+
+		read -p "Delete remote branch '$branch_name' [yes]? " yes_no
+		draw_line
+		if [[ $yes_no == "yes" || $yes_no == "YES" || $yes_no == "" ]]
+		then
+			git push origin --delete $branch_name
+		fi
+
+		wait_key
+		menu_branches
+		return
 	fi
 
 	wait_key
