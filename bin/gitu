@@ -463,10 +463,10 @@ menu_branches()
 	echo "BRANCHES UTILITIES"
 	draw_line
 
-	echo "0 - Update remote branches           4 - Create local branch"
-	echo "1 - List local branches              5 - Switch to another branch"
-	echo "2 - List remote branches             6 - Delete branch"
-	echo "3 - List local and remote branches   7 - ^ Push local branch"
+	echo "0 - Update remote branches     4 - Delete branch"
+	echo "1 - List branches              5 - ^ Push local branch"
+	echo "2 - Create local branch        6 - "
+	echo "3 - Switch to another branch   7 - "
 	draw_line
 	echo "ENTER -> Back"
 	draw_line
@@ -474,13 +474,11 @@ menu_branches()
 	read -p "Choose a BRANCH command: " opcao;
 		case $opcao in
 			 "0") menu_branches_update_remote ;;
-			 "1") menu_branches_list_local_branches ;;
-			 "2") menu_branches_list_remote_branches ;;
-			 "3") menu_branches_list_local_and_remote_branches ;;
-			 "4") menu_branches_create_local ;;
-			 "5") menu_branches_switch_to_another_branch ;;
-			 "6") menu_branches_delete ;;
-			 "7") menu_branches_push ;;
+			 "1") menu_branches_list_branches ;;
+			 "2") menu_branches_create_local ;;
+			 "3") menu_branches_switch_to_another_branch ;;
+			 "4") menu_branches_delete ;;
+			 "5") menu_branches_push ;;
 			 "" ) menu_main ;;
 		esac
 }
@@ -494,29 +492,20 @@ menu_branches_update_remote()
 	menu_branches
 }
 
-menu_branches_list_local_branches()
+menu_branches_list_branches()
 {
 	clear
-	draw_header "BRANCHES UTILITIES" "LIST LOCAL BRANCHES"
-	git branch
-	wait_key
-	menu_branches
-}
+	draw_header "BRANCHES UTILITIES" "LIST BRANCHES"
 
-menu_branches_list_remote_branches()
-{
-	clear
-	draw_header "BRANCHES UTILITIES" "LIST REMOTE BRANCHES"
-	git branch -r
-	wait_key
-	menu_branches
-}
-
-menu_branches_list_local_and_remote_branches()
-{
-	clear
-	draw_header "BRANCHES UTILITIES" "LIST LOCAL AND REMOTE BRANCHES"
-	git branch -a
+	read -p "0 Cancel | 1 - Local | 2 - Remote | 3 - Local and Remote: " option
+	draw_line
+	case $option in
+		 "0") menu_branches ;;
+		 "1") git branch ;;
+		 "2") git branch -r ;;
+		 "3") git branch -a ;;
+	esac
+	
 	wait_key
 	menu_branches
 }
