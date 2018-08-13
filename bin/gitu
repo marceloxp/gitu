@@ -465,7 +465,7 @@ menu_branches()
 
 	echo "0 - Update remote branches     4 - Delete branch"
 	echo "1 - List branches              5 - ^ Push local branch"
-	echo "2 - Create local branch        6 - "
+	echo "2 - Create local branch        6 - Merge"
 	echo "3 - Switch to another branch   7 - "
 	draw_line
 	echo "ENTER -> Back"
@@ -479,6 +479,7 @@ menu_branches()
 			 "3") menu_branches_switch_to_another_branch ;;
 			 "4") menu_branches_delete ;;
 			 "5") menu_branches_push ;;
+			 "6") menu_branches_merge ;;
 			 "" ) menu_main ;;
 		esac
 }
@@ -647,6 +648,31 @@ menu_branches_push()
 	if [[ $yes_no == "yes" || $yes_no == "YES" || $yes_no == "" ]]
 	then
 		git push -u origin $branch_name
+	fi
+
+	wait_key
+	menu_branches
+}
+
+menu_branches_merge()
+{
+	current_branch=`utils_get_current_branch`
+
+	clear
+	draw_header "BRANCHES UTILITIES" "MERGE"
+	
+	git branch
+	draw_line
+
+	read -p "Branch name [cancel]: " branch_name
+	if [[ $branch_name != "" ]]
+	then
+		read -p "Merge '$branch_name' => '$current_branch' [yes]? " yes_no
+		draw_line
+		if [[ $yes_no == "yes" || $yes_no == "YES" || $yes_no == "" ]]
+		then
+			git merge $branch_name
+		fi
 	fi
 
 	wait_key
