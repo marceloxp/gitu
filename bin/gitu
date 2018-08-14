@@ -335,7 +335,9 @@ menu_git_tag_add()
 	draw_header "GIT TAG" "ADD"
 	git tag -l -n
 	draw_line
+	
 	read -e -p "Tag name [cancel]: " tag_name
+	draw_line
 	if [ "$tag_name" == "" ]
 	then
 		wait_key
@@ -343,19 +345,20 @@ menu_git_tag_add()
 		return
 	fi
 
-	begin_script "GIT ADD TAG"
+	read -e -p "Tag message [none]: " tag_message
+	draw_line
 
-		git tag -d $tag_name
-		if utils_has_remote; then
-			git push --delete origin $tag_name
-		fi
+	# git tag -d $tag_name
+	# if utils_has_remote; then
+	# 	git push --delete origin $tag_name
+	# fi
 
-		git tag $tag_name
+	git tag $tag_name -m "$tag_message"
 
-		if utils_has_remote; then
-			git push --tags
-		fi
-	end_script "GIT ADD TAG"
+	if utils_has_remote
+	then
+		git push --tags
+	fi
 
 	wait_key
 	menu_git_tag
