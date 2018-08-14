@@ -712,7 +712,7 @@ menu_gitflow()
 	echo "0 - Help"
 	echo "1 - Start a Git Flow"
 	echo "2 - Merge Feature"
-	echo "3 - Create Release"
+	echo "3 - Create Release and Merge into Master"
 	draw_line
 	echo "ENTER -> Back"
 	draw_line
@@ -769,7 +769,7 @@ menu_gitflow_start()
 		clear
 		draw_header "GIT FLOW" "START A GIT FLOW - FEATURE"
 
-		read -p "Branch start: [develop]" branch_start
+		read -p "Branch start [develop]: " branch_start
 		if [[ $branch_start == "" ]]
 		then
 			branch_start="develop"
@@ -781,11 +781,11 @@ menu_gitflow_start()
 		then
 			echo "Change branch to $branch_start..."
 			git checkout $branch_start
-			wait_key
+			#wait_key
 
 			echo "Create feature branch..."
 			git checkout -b feature/$feature_name
-			wait_key
+			#wait_key
 
 			echo "Push feature branch..."
 			git push origin feature/$feature_name
@@ -800,7 +800,9 @@ menu_gitflow_merge_feature()
 	clear
 	draw_header "GIT FLOW" "MERGE FEATURE"
 
-	read -p "Branch destination: [develop]" branch_destination
+	current_branch=`utils_get_current_branch`
+
+	read -p "Branch destination [develop]: " branch_destination
 	if [[ $branch_destination == "" ]]
 	then
 		branch_destination="develop"
@@ -819,14 +821,17 @@ menu_gitflow_merge_feature()
 	then
 		echo "Change branch to $branch_destination..."
 		git checkout $branch_destination
-		wait_key
+		#wait_key
 
 		echo "Merge feature branch..."
 		git merge feature/$feature_name
-		wait_key
+		#wait_key
 
 		echo "Pull $branch_destination branch..."
 		git push origin $branch_destination
+		
+		echo "Back to feature branch..."
+		git checkout $current_branch
 	else
 		menu_gitflow_start_feature
 		return
@@ -843,7 +848,7 @@ menu_gitflow_create_release()
 	clear
 	draw_header "GIT FLOW" "CREATE RELEASE"
 
-	read -p "Started branch: [develop]" started_branch
+	read -p "Started branch: [develop]: " started_branch
 	if [[ $started_branch == "" ]]
 	then
 		started_branch="develop"
@@ -861,16 +866,41 @@ menu_gitflow_create_release()
 	read -p "Release name: release/v" release_name
 	if [[ $release_name != "" ]]
 	then
-		echo "Change branch to $started_branch..."
-		git checkout $started_branch
-		wait_key
+		echo "[Empty to cancel]"
+		read -p "Annotation tag: " annotation_tag
+		if [[ $annotation_tag != "" ]]
+		then
+			echo "Change branch to $started_branch..."
+			git checkout $started_branch
+			#wait_key
 
-		echo "Creating new release branch..."
-		git checkout -b release/v$release_name
-		wait_key
+			echo "Creating new release branch..."
+			git checkout -b release/v$release_name
+			#wait_key
 
-		echo "Push release/v$release_name branch..."
-		git push origin release/v$release_name
+			echo "Push release/v$release_name branch..."
+			git push origin release/v$release_name
+			#wait_key
+
+			echo "Merging into Master..."
+			git checkout master && git merge release/v$release_name
+			#wait_key
+
+			echo "Creating tag..."
+			git tag -a v$release_name -m "$annotation_tag"
+			#wait_key
+
+			echo "Show tag..."
+			git show v$release_name
+			#wait_key
+
+			echo "Push tag..."
+			git push origin v$release_name
+			#wait_key
+
+			echo "Back to $started_branch branch..."
+			git checkout $started_branch
+		fi
 	fi
 
 	wait_key
