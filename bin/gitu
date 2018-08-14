@@ -18,7 +18,8 @@ menu_main()
 	echo "4 - Discard changes             9 - Tags"
 	draw_line
 	echo "B - Branches utilities          Y - Yarn"
-	echo "Z - Generate Zip                S - Stash                 ENTER - Exit"
+	echo "Z - Generate Zip                S - Stash"
+	echo "F - Git Flow                                              ENTER - Exit"
 	draw_line
 	read -p "Choose a GIT command: " opcao;
 	case $opcao in
@@ -36,6 +37,7 @@ menu_main()
 		"B"|"b") menu_branches ;;
 		"Y"|"y") menu_yarn ;;
 		"S"|"s") menu_stash ;;
+		"F"|"f") menu_gitflow ;;
 	esac
 }
 
@@ -469,7 +471,7 @@ menu_branches()
 	echo "0 - Update remote branches     4 - Delete branch"
 	echo "1 - List branches              5 - ^ Push local branch"
 	echo "2 - Create local branch        6 - Merge"
-	echo "3 - Switch to another branch   7 - "
+	echo "3 - Switch to another branch"
 	draw_line
 	echo "ENTER -> Back"
 	draw_line
@@ -483,6 +485,7 @@ menu_branches()
 			 "4") menu_branches_delete ;;
 			 "5") menu_branches_push ;;
 			 "6") menu_branches_merge ;;
+			 "7") menu_branches_init ;;
 			 "" ) menu_main ;;
 		esac
 }
@@ -682,6 +685,229 @@ menu_branches_merge()
 	menu_branches
 }
 
+# get_package_repository()
+# {
+# 	node -e "var gi = require('git-info'); gi('repository', function(err, result) { console.log(result.repository); });"
+# }
+
+#  ██████╗ ██╗████████╗    ███████╗██╗      ██████╗ ██╗    ██╗
+# ██╔════╝ ██║╚══██╔══╝    ██╔════╝██║     ██╔═══██╗██║    ██║
+# ██║  ███╗██║   ██║       █████╗  ██║     ██║   ██║██║ █╗ ██║
+# ██║   ██║██║   ██║       ██╔══╝  ██║     ██║   ██║██║███╗██║
+# ╚██████╔╝██║   ██║       ██║     ███████╗╚██████╔╝╚███╔███╔╝
+#  ╚═════╝ ╚═╝   ╚═╝       ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝ 
+#  
+# Fonte: https://medium.com/trainingcenter/utilizando-o-fluxo-git-flow-e63d5e0d5e04
+# 
+
+menu_gitflow()
+{
+	clear
+	draw_line
+	draw_logo
+	print_project_and_git_info
+	echo "GIT FLOW"
+	draw_line
+
+	echo "0 - Help"
+	echo "1 - Start a Git Flow"
+	echo "2 - Merge Feature"
+	echo "3 - Create Release"
+	draw_line
+	echo "ENTER -> Back"
+	draw_line
+	echo ""
+	read -p "Choose a GIT FLOW command: " opcao;
+		case $opcao in
+			 "0") menu_gitflow_help ;;
+			 "1") menu_gitflow_start ;;
+			 "2") menu_gitflow_merge_feature ;;
+			 "3") menu_gitflow_create_release ;;
+			 "" ) menu_main ;;
+		esac
+}
+
+menu_gitflow_help()
+{
+	clear
+	draw_header "GIT FLOW" "HELP"
+
+	echo "MASTER  : Irá contér todo código já testado, versionado que será entregue ao cliente."
+	echo "DEVELOP : Deve sempre conter o código mais atual, onde as branchs de features serão ramificadas tendo ela como base."
+	echo "FEATURE : Para novas implementações."
+	echo "RELEASE : Para finalizar o release e tags."
+	echo "BUGFIX  : Para resolver e documentar problemas em release."
+	echo "HOTFIX  : Para resolver problema crítico em produção que não pode esperar novo release."
+
+	wait_key
+	menu_gitflow
+}
+
+menu_gitflow_start()
+{
+	clear
+	draw_header "GIT FLOW" "START A GIT FLOW"
+
+	echo "F - Feature"
+	echo "B - Bugfix"
+	echo "H - Hotfix"
+	draw_line
+	echo "ENTER -> Back"
+	draw_line
+	echo ""
+	read -p "Choose a GIT FLOW branch type: " opcao;
+		case $opcao in
+			 "f"|"F") menu_gitflow_start_feature ;;
+			 "b"|"B") menu_gitflow_start_bugfix ;;
+			 "h"|"H") menu_gitflow_start_hotfix ;;
+			 ""     ) menu_gitflow ;;
+		esac
+}
+
+	menu_gitflow_start_feature()
+	{
+		clear
+		draw_header "GIT FLOW" "START A GIT FLOW - FEATURE"
+
+		read -p "Branch start: [develop]" branch_start
+		if [[ $branch_start == "" ]]
+		then
+			branch_start="develop"
+		fi
+
+		draw_line
+		read -p "Feature name: feature/" feature_name
+		if [[ $feature_name != "" ]]
+		then
+			echo "Change branch to $branch_start..."
+			git checkout $branch_start
+			wait_key
+
+			echo "Create feature branch..."
+			git checkout -b feature/$feature_name
+			wait_key
+
+			echo "Push feature branch..."
+			git push origin feature/$feature_name
+		fi
+
+		wait_key
+		menu_gitflow
+	}
+
+menu_gitflow_merge_feature()
+{
+	clear
+	draw_header "GIT FLOW" "MERGE FEATURE"
+
+	read -p "Branch destination: [develop]" branch_destination
+	if [[ $branch_destination == "" ]]
+	then
+		branch_destination="develop"
+	fi
+
+	clear
+	draw_header "GIT FLOW" "MERGE FEATURE TO $branch_destination"
+
+	echo "Feature Branches"
+	draw_line
+	git branch --list "feature/*"
+	draw_line
+
+	read -p "Feature name: feature/" feature_name
+	if [[ $feature_name != "" ]]
+	then
+		echo "Change branch to $branch_destination..."
+		git checkout $branch_destination
+		wait_key
+
+		echo "Merge feature branch..."
+		git merge feature/$feature_name
+		wait_key
+
+		echo "Pull $branch_destination branch..."
+		git push origin $branch_destination
+	else
+		menu_gitflow_start_feature
+		return
+	fi
+
+	wait_key
+	menu_gitflow
+
+	# git checkout develop && git merge feature/novo-componente && git push origin develop
+}
+
+menu_gitflow_create_release()
+{
+	clear
+	draw_header "GIT FLOW" "CREATE RELEASE"
+
+	read -p "Started branch: [develop]" started_branch
+	if [[ $started_branch == "" ]]
+	then
+		started_branch="develop"
+	fi
+
+	clear
+	draw_header "GIT FLOW" "CREATE RELEASE FROM $started_branch"
+
+	echo "Release Branches"
+	draw_line
+	git branch --list "release/*"
+	draw_line
+
+	echo "[Empty to cancel]"
+	read -p "Release name: release/v" release_name
+	if [[ $release_name != "" ]]
+	then
+		echo "Change branch to $started_branch..."
+		git checkout $started_branch
+		wait_key
+
+		echo "Creating new release branch..."
+		git checkout -b release/v$release_name
+		wait_key
+
+		echo "Push release/v$release_name branch..."
+		git push origin release/v$release_name
+	fi
+
+	wait_key
+	menu_gitflow
+
+	# $ git checkout -b release/v1.0.1 && git push origin release/v1.0.1
+}
+
+# menu_gitflow_create_basic_branches()
+# {
+# 	clear
+# 	draw_header "GIT FLOW" "CREATE BASIC FLOW BRANCHES"
+
+# 	echo "CREATE FEATURE"
+# 	git fetch origin && git checkout -b feature && git push origin feature
+# 	draw_line
+
+# 	echo "CREATE RELEASE"
+# 	git fetch origin && git checkout -b release && git push origin release
+# 	draw_line
+
+# 	echo "CREATE BUGFIX"
+# 	git fetch origin && git checkout -b bugfix && git push origin bugfix
+# 	draw_line
+
+# 	echo "CREATE HOTFIX"
+# 	git fetch origin && git checkout -b hotfix && git push origin hotfix
+# 	draw_line
+
+# 	echo "CREATE DEVELOP"
+# 	git fetch origin && git checkout -b develop && git push origin develop
+# 	draw_line
+
+# 	wait_key
+# 	menu_gitflow
+# }
+
 # ███████╗████████╗ █████╗ ███████╗██╗  ██╗
 # ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║  ██║
 # ███████╗   ██║   ███████║███████╗███████║
@@ -707,14 +933,14 @@ menu_stash()
 	echo ""
 	read -p "Choose a STASH command: " opcao;
 		case $opcao in
-			 "0") menu_stash_LIST ;;
+			 "0") menu_stash_list ;;
 			 "1") menu_stash_add ;;
 			 "2") menu_stash_pop ;;
 			 "" ) menu_main ;;
 		esac
 }
 
-menu_stash_LIST()
+menu_stash_list()
 {
 	draw_header "STASH UTILITIES" "LIST STASHES"
 	git stash list

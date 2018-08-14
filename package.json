@@ -9,6 +9,6 @@
 		"gitu": "bin/gitu"
 	},
 	"scripts": {
-		"preinstall": "npm i -g figlet-cli"
+		"preinstall": "sudo npm install -g figlet-cli && npm install git-info"
 	}
 }
