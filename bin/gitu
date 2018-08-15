@@ -325,11 +325,9 @@ menu_git_tag()
 
 	echo "TAGS"
 	draw_line
-	echo "1 - List"
-	echo "2 - Add"
+	echo "1 - List       4 - V Pull"
+	echo "2 - Add        5 - ^ Push"
 	echo "3 - Remove"
-	echo "4 - V Pull"
-	echo "5 - ^ Push"
 	draw_line
 	echo "ENTER - Back"
 	draw_line
@@ -363,12 +361,7 @@ menu_git_tag_add()
 	read -e -p "Tag message [none]: " tag_message
 	draw_line
 
-	# git tag -d $tag_name
-	# if utils_has_remote; then
-	# 	git push --delete origin $tag_name
-	# fi
-
-	git tag $tag_name -m "$tag_message"
+	git tag -a $tag_name -m "$tag_message"
 
 	if utils_has_remote
 	then
@@ -741,7 +734,6 @@ menu_branches_clean_local_merged_branches()
 #  ╚═════╝ ╚═╝   ╚═╝       ╚═╝     ╚══════╝ ╚═════╝  ╚══╝╚══╝ 
 #  
 # Fonte: https://medium.com/trainingcenter/utilizando-o-fluxo-git-flow-e63d5e0d5e04
-# 
 
 menu_gitflow()
 {
@@ -792,7 +784,7 @@ menu_gitflow_start()
 	draw_header "GIT FLOW" "START A GIT FLOW"
 
 	echo "F - Feature"
-	echo "B - Bugfix"
+	echo "B - Bugfix (todo)"
 	echo "H - Hotfix"
 	draw_line
 	echo "ENTER -> Back"
@@ -827,14 +819,50 @@ menu_gitflow_start()
 		then
 			echo "Change branch to $branch_start..."
 			git checkout $branch_start
-			# wait_key
+
+			echo "Update branch..."
+			git pull origin $branch_start
 
 			echo "Create feature branch..."
 			git checkout -b feature/$feature_name
-			# wait_key
 
 			echo "Push feature branch..."
 			git push origin feature/$feature_name
+		fi
+
+		wait_key
+		menu_gitflow
+	}
+
+	menu_gitflow_start_hotfix()
+	{
+		clear
+		draw_header "GIT FLOW" "START A GIT FLOW - HOTFIX"
+
+		git branch -a
+		draw_line
+
+		read -p "Branch start [master]: " branch_start
+		if [[ $branch_start == "" ]]
+		then
+			branch_start="master"
+		fi
+
+		draw_line
+		read -p "Hotfix name: hotfix/" hotfix_name
+		if [[ $hotfix_name != "" ]]
+		then
+			echo "Change branch to $branch_start..."
+			git checkout $branch_start
+
+			echo "Update branch..."
+			git pull origin $branch_start
+
+			echo "Create hotfix branch..."
+			git checkout -b hotfix/$hotfix_name
+
+			echo "Push hotfix branch..."
+			git push origin hotfix/$hotfix_name
 		fi
 
 		wait_key
@@ -924,31 +952,21 @@ menu_gitflow_create_release()
 		then
 			echo "Change branch to $started_branch..."
 			git checkout $started_branch
-			# wait_key
 
 			echo "Creating new release branch..."
 			git checkout -b release/v$release_name
-			# wait_key
 
 			echo "Push release/v$release_name branch..."
 			git push origin release/v$release_name
-			# wait_key
 
 			echo "Merging into Master..."
 			git checkout master && git merge release/v$release_name
-			# wait_key
 
 			echo "Creating tag..."
 			git tag -a v$release_name -m "$annotation_tag"
-			# wait_key
-
-			# echo "Show tag..."
-			# git show v$release_name
-			# wait_key
 
 			echo "Push tag..."
 			git push origin v$release_name
-			# wait_key
 
 			echo "Back to $started_branch branch..."
 			git checkout $started_branch
@@ -960,35 +978,6 @@ menu_gitflow_create_release()
 
 	# $ git checkout -b release/v1.0.1 && git push origin release/v1.0.1
 }
-
-# menu_gitflow_create_basic_branches()
-# {
-# 	clear
-# 	draw_header "GIT FLOW" "CREATE BASIC FLOW BRANCHES"
-
-# 	echo "CREATE FEATURE"
-# 	git fetch origin && git checkout -b feature && git push origin feature
-# 	draw_line
-
-# 	echo "CREATE RELEASE"
-# 	git fetch origin && git checkout -b release && git push origin release
-# 	draw_line
-
-# 	echo "CREATE BUGFIX"
-# 	git fetch origin && git checkout -b bugfix && git push origin bugfix
-# 	draw_line
-
-# 	echo "CREATE HOTFIX"
-# 	git fetch origin && git checkout -b hotfix && git push origin hotfix
-# 	draw_line
-
-# 	echo "CREATE DEVELOP"
-# 	git fetch origin && git checkout -b develop && git push origin develop
-# 	draw_line
-
-# 	wait_key
-# 	menu_gitflow
-# }
 
 # ███████╗████████╗ █████╗ ███████╗██╗  ██╗
 # ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║  ██║
@@ -1170,7 +1159,7 @@ draw_header()
 utils_has_remote()
 {
 	remotes=$(git branch -r)
-	if [ $remotes=="" ]
+	if [[ $remotes=="" ]]
 	then
 		return $BOOL_FAIL
 	else
