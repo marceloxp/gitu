@@ -328,6 +328,8 @@ menu_git_tag()
 	echo "1 - List"
 	echo "2 - Add"
 	echo "3 - Remove"
+	echo "4 - V Pull"
+	echo "5 - ^ Push"
 	draw_line
 	echo "ENTER - Back"
 	draw_line
@@ -336,6 +338,8 @@ menu_git_tag()
 		"1") menu_git_tag_lst ;;
 		"2") menu_git_tag_add ;;
 		"3") menu_git_tag_del ;;
+		"4") menu_git_tag_pull ;;
+		"5") menu_git_tag_push ;;
 		"" ) menu_git_tag_back ;;
 	esac
 }
@@ -423,6 +427,25 @@ menu_git_tag_lst()
 menu_git_tag_back()
 {
 	menu_main
+}
+
+menu_git_tag_pull()
+{
+	clear
+	draw_header "GIT TAG" "PULL"
+	git fetch --tags
+	draw_line
+	wait_key
+	menu_git_tag
+}
+
+menu_git_tag_push()
+{
+	clear
+	draw_header "GIT TAG" "PUSH TAGS"
+	git push origin --tags
+	wait_key
+	menu_git_tag
 }
 
 # ██╗   ██╗ █████╗ ██████╗ ███╗   ██╗
