@@ -2,6 +2,8 @@
 
 > Git Utilities GUI on Terminal.
 
+THE PROJECT IS BETA - DONT USE IN PRODUCTION !!!
+
 ![alt text](images/screenshot-1.png "Screenshot")
 
 ## Getting Started
