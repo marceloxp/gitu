@@ -18,7 +18,7 @@ menu_main()
 	echo "4 - Discard changes             9 - Tags"
 	draw_line
 	echo "B - Branches utilities          Y - Yarn             K - Gitk"
-	echo "Z - Generate Zip                S - Stash"
+	echo "Z - Generate Zip                S - Stash            U - Utilities"
 	echo "F - Git Flow                    G - Git Gui          ENTER - Exit"
 	draw_line
 	read -p "Choose a GIT command: " opcao;
@@ -38,24 +38,9 @@ menu_main()
 		"B"|"b") menu_branches ;;
 		"Y"|"y") menu_yarn ;;
 		"S"|"s") menu_stash ;;
+		"U"|"u") menu_utilities ;;
 		"F"|"f") menu_gitflow ;;
 	esac
-}
-
-print_project_and_git_info()
-{
-	draw_line
-	package_name=`utils_get_package_name`
-	if [ "$package_name" != "" ]
-	then
-		package_version=`utils_get_package_version`
-		echo -n "Project:" $package_name "("$package_version")"
-	else
-		echo -n "No Project"
-	fi
-	current_branch=`utils_get_current_branch`
-	echo " - Current Branch: "$current_branch
-	draw_line
 }
 
 git_status()
@@ -251,7 +236,6 @@ menu_pull_files()
 
 	read -e -p "Branch name [$current_branch|cancel]: " branch_name
 	draw_line
-
 	if [[ "$branch_name" == "cancel" || "$branch_name" == "CANCEL" ]]
 	then
 		wait_key
@@ -280,7 +264,41 @@ menu_push_files()
 
 	if [ "$current_branch" != "" ]
 	then
-		git pull origin $current_branch && git push origin $current_branch
+		status "V - Pull $current_branch"
+		git pull origin $current_branch
+
+		status "^ - Push $current_branch"
+		git push origin $current_branch
+
+		status "Remote Branches"
+		git branch -avv
+		draw_line
+
+		read -e -p "Push $current_branch to another remote? [y|N]: " option
+		draw_line
+		if [[ "$option" == "y" || "$option" == "Y" ]]
+		then
+			read -e -p "Remote Branch name: " remote_branch
+			draw_line
+			if [[ "$remote_branch" != "" ]]
+			then
+				read -e -p "Push $current_branch -> $remote_branch ? [y|N]: " option
+				draw_line
+				if [[ "$option" == "y" || "$option" == "Y" ]]
+				then
+					status "Pull $current_branch <- $remote_branch"
+					git push $remote_branch $current_branch
+
+					read -e -p "Push $current_branch -> $remote_branch ? [y|N]: " option
+					draw_line
+					if [[ "$option" == "y" || "$option" == "Y" ]]
+					then
+						status "Push $remote_branch -> $current_branch"
+						git push $remote_branch $current_branch
+					fi
+				fi
+			fi
+		fi
 	else
 		echo -n "Current branch not found!"
 	fi
@@ -306,6 +324,54 @@ menu_zip_files()
 	wait_key
 	menu_main
 }
+
+menu_utilities()
+{
+	clear
+	draw_header "UTILITIES"
+
+	echo "1 - Credential cache (1 hour)"
+	echo "2 - Credential cache (10 hours)"
+	draw_line
+	echo "ENTER - Back"
+	draw_line
+	read -p "Choose a option: " opcao;
+	case $opcao in
+		"1") menu_utilities_credential_cache_01 ;;
+		"2") menu_utilities_credential_cache_10 ;;
+		"" ) menu_utilities_back ;;
+	esac
+}
+
+	menu_utilities_credential_cache_01()
+	{
+		clear
+		draw_header "UTILITIES" "CREDENTIAL CACHE"
+
+		status "Cache to 3600 seconds"
+		git config --global credential.helper 'cache --timeout 3600'
+	
+		wait_key
+		menu_utilities
+	}
+
+	menu_utilities_credential_cache_10()
+	{
+		clear
+		draw_header "UTILITIES" "CREDENTIAL CACHE"
+
+		status "Cache to 36000 seconds"
+		git config --global credential.helper 'cache --timeout 36000'
+	
+		wait_key
+		menu_utilities
+	}
+
+	menu_utilities_back()
+	{
+		menu_main
+	}
+
 
 #  ██████╗ ██╗████████╗    ████████╗ █████╗  ██████╗ 
 # ██╔════╝ ██║╚══██╔══╝    ╚══██╔══╝██╔══██╗██╔════╝ 
@@ -804,29 +870,31 @@ menu_gitflow_start()
 		clear
 		draw_header "GIT FLOW" "START A GIT FLOW - FEATURE"
 
+		status "LIST BRANCHES"
 		git branch -a
 		draw_line
 
 		read -p "Branch start [develop]: " branch_start
+		draw_line
 		if [[ $branch_start == "" ]]
 		then
 			branch_start="develop"
 		fi
 
-		draw_line
 		read -p "Feature name: feature/" feature_name
+		draw_line
 		if [[ $feature_name != "" ]]
 		then
-			echo "Change branch to $branch_start..."
+			status "Change branch to $branch_start..."
 			git checkout $branch_start
 
-			echo "Update branch..."
+			status "Update branch..."
 			git pull origin $branch_start
 
-			echo "Create feature branch..."
+			status "Create feature branch..."
 			git checkout -b feature/$feature_name
 
-			echo "Push feature branch..."
+			status "Push feature branch..."
 			git push origin feature/$feature_name
 		fi
 
@@ -887,28 +955,31 @@ menu_gitflow_merge_feature()
 	clear
 	draw_header "GIT FLOW" "MERGE FEATURE TO $branch_destination"
 
-	echo "Feature Branches"
-	draw_line
+	status "Tags"
 	git tag
-	draw_line
+
+	status "Current Features"
 	git branch --list "feature/*"
 	draw_line
 
 	read -p "Feature name: feature/" feature_name
+	draw_line
 	if [[ $feature_name != "" ]]
 	then
-		echo "Change branch to $branch_destination..."
+		# change to DEVELOP branch
+		status "Change branch to $branch_destination..."
 		git checkout $branch_destination
-		# wait_key
 
-		echo "Merge feature branch..."
-		git merge feature/$feature_name
-		# wait_key
-
-		echo "Pull $branch_destination branch..."
-		git push origin $branch_destination
+		# update DEVELOP branch
+		status "Pull $branch_destination branch..."
+		git pull origin $branch_destination
 		
-		echo "Back to feature branch..."
+		# insert FEATURE/X into DEVELOP
+		status "Merge feature branch..."
+		git merge feature/$feature_name
+
+		# back to DEVELOP branch
+		status "Back to feature branch..."
 		git checkout $current_branch
 	else
 		menu_gitflow_start_feature
@@ -1069,7 +1140,7 @@ menu_stash_apply()
 
 		read -p "Delete Stash? [Y|n] " option;
 		draw_line
-		if [[ $option != "" || $option == "y" || $option == "Y" ]]
+		if [[ $option == "" || $option == "y" || $option == "Y" ]]
 		then
 			git stash drop stash@{$stash_index}
 		fi
@@ -1112,6 +1183,11 @@ draw_line()
 	echo "---------------------------------------------------------------------------------------------"
 }
 
+draw_close()
+{
+	echo "----                                                                                     ----"
+}
+
 draw_logo()
 {
 	figlet -f "Slant" "Git Commands"
@@ -1128,6 +1204,30 @@ end_script()
 {
 	draw_line
 	echo "END" $1
+	draw_line
+}
+
+status()
+{
+	echo ""
+	draw_line
+	echo ">> " $1
+	draw_close
+}
+
+print_project_and_git_info()
+{
+	draw_line
+	package_name=`utils_get_package_name`
+	if [ "$package_name" != "" ]
+	then
+		package_version=`utils_get_package_version`
+		echo -n "Project:" $package_name "("$package_version")"
+	else
+		echo -n "No Project"
+	fi
+	current_branch=`utils_get_current_branch`
+	echo " - Current Branch: "$current_branch
 	draw_line
 }
 
@@ -1191,6 +1291,18 @@ utils_get_package_name()
 		echo $PACKAGE_NAME
 	else
 		echo ""
+	fi
+}
+
+get_continue()
+{
+	read -p "CONTINUE? [Y|n] " option_continue;
+	draw_line
+	if [[ $option_continue != "" || $option_continue == "y" || $option_continue == "Y" ]]
+	then
+		echo "y"
+	else
+		echo "n"
 	fi
 }
 
